@@ -3,15 +3,13 @@ package io.homeassistant.companion.android.phone
 import android.annotation.SuppressLint
 import android.content.Intent
 import androidx.wear.tiles.TileService
-import com.google.android.gms.wearable.DataClient
-import com.google.android.gms.wearable.DataEvent
-import com.google.android.gms.wearable.DataEventBuffer
-import com.google.android.gms.wearable.DataMap
-import com.google.android.gms.wearable.DataMapItem
-import com.google.android.gms.wearable.MessageEvent
-import com.google.android.gms.wearable.PutDataMapRequest
-import com.google.android.gms.wearable.Wearable
-import com.google.android.gms.wearable.WearableListenerService
+import com.huawei.wearengine.WearEngine
+import com.huawei.wearengine.message.Message
+import com.huawei.wearengine.message.MessageCallback
+import com.huawei.wearengine.message.MessageClient
+import com.huawei.wearengine.datatransfer.Data
+import com.huawei.wearengine.datatransfer.DataCallback
+import com.huawei.wearengine.datatransfer.DataTransferEngine
 import dagger.hilt.android.AndroidEntryPoint
 import io.homeassistant.companion.android.BuildConfig
 import io.homeassistant.companion.android.common.data.integration.DeviceRegistration
@@ -51,8 +49,8 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.encodeToString
 import timber.log.Timber
 
-@SuppressLint("VisibleForTests") // https://issuetracker.google.com/issues/239451111
-class PhoneSettingsListener : WearableListenerService(), DataClient.OnDataChangedListener {
+@SuppressLint("VisibleForTests")
+class PhoneSettingsListener : MessageCallback, DataCallback {
 
     @Inject
     lateinit var serverManager: ServerManager
@@ -73,40 +71,41 @@ class PhoneSettingsListener : WearableListenerService(), DataClient.OnDataChange
 
     private val mainScope: CoroutineScope = CoroutineScope(Dispatchers.Main + Job())
 
-    override fun onMessageReceived(event: MessageEvent) {
-        Timber.d("Message received: $event")
-        if (event.path == "/requestConfig") {
+    // HMS: MessageCallback implementation
+    override fun onMessageReceived(nodeId: String, path: String, data: ByteArray) {
+        Timber.d("Message received: path=$path from node=$nodeId")
+        if (path == "/requestConfig") {
             sendPhoneData()
         }
+        // Add more path handling as needed
     }
 
     private fun sendPhoneData() = mainScope.launch {
         val currentFavorites = favoritesDao.getAll()
-        val putDataRequest = PutDataMapRequest.create("/config").run {
-            dataMap.putLong(WearDataMessages.KEY_UPDATE_TIME, System.nanoTime())
-            val isRegistered = serverManager.isRegistered()
-            dataMap.putBoolean(WearDataMessages.CONFIG_IS_AUTHENTICATED, isRegistered)
-            if (isRegistered) {
-                dataMap.putInt(WearDataMessages.CONFIG_SERVER_ID, serverManager.getServer()?.id ?: 0)
-                dataMap.putString(WearDataMessages.CONFIG_SERVER_EXTERNAL_URL, serverManager.getServer()?.connection?.externalUrl ?: "")
-                dataMap.putString(WearDataMessages.CONFIG_SERVER_WEBHOOK_ID, serverManager.getServer()?.connection?.webhookId ?: "")
-                dataMap.putString(WearDataMessages.CONFIG_SERVER_CLOUD_URL, serverManager.getServer()?.connection?.cloudUrl ?: "")
-                dataMap.putString(WearDataMessages.CONFIG_SERVER_CLOUDHOOK_URL, serverManager.getServer()?.connection?.cloudhookUrl ?: "")
-                dataMap.putBoolean(WearDataMessages.CONFIG_SERVER_USE_CLOUD, serverManager.getServer()?.connection?.useCloud ?: false)
-                dataMap.putString(WearDataMessages.CONFIG_SERVER_REFRESH_TOKEN, serverManager.getServer()?.session?.refreshToken ?: "")
-            }
-            dataMap.putString(WearDataMessages.CONFIG_SUPPORTED_DOMAINS, kotlinJsonMapper.encodeToString(HomePresenterImpl.supportedDomains))
-            dataMap.putString(WearDataMessages.CONFIG_FAVORITES, kotlinJsonMapper.encodeToString(currentFavorites))
-            dataMap.putString(WearDataMessages.CONFIG_TEMPLATE_TILES, kotlinJsonMapper.encodeToString(wearPrefsRepository.getAllTemplateTiles()))
-            setUrgent()
-            asPutDataRequest()
-        }
-
+        // Serialize your data as needed (e.g., JSON)
+        val configData = mapOf(
+            WearDataMessages.KEY_UPDATE_TIME to System.nanoTime(),
+            WearDataMessages.CONFIG_IS_AUTHENTICATED to serverManager.isRegistered(),
+            WearDataMessages.CONFIG_SERVER_ID to (serverManager.getServer()?.id ?: 0),
+            WearDataMessages.CONFIG_SERVER_EXTERNAL_URL to (serverManager.getServer()?.connection?.externalUrl ?: ""),
+            WearDataMessages.CONFIG_SERVER_WEBHOOK_ID to (serverManager.getServer()?.connection?.webhookId ?: ""),
+            WearDataMessages.CONFIG_SERVER_CLOUD_URL to (serverManager.getServer()?.connection?.cloudUrl ?: ""),
+            WearDataMessages.CONFIG_SERVER_CLOUDHOOK_URL to (serverManager.getServer()?.connection?.cloudhookUrl ?: ""),
+            WearDataMessages.CONFIG_SERVER_USE_CLOUD to (serverManager.getServer()?.connection?.useCloud ?: false),
+            WearDataMessages.CONFIG_SERVER_REFRESH_TOKEN to (serverManager.getServer()?.session?.refreshToken ?: ""),
+            WearDataMessages.CONFIG_SUPPORTED_DOMAINS to kotlinJsonMapper.encodeToString(HomePresenterImpl.supportedDomains),
+            WearDataMessages.CONFIG_FAVORITES to kotlinJsonMapper.encodeToString(currentFavorites),
+            WearDataMessages.CONFIG_TEMPLATE_TILES to kotlinJsonMapper.encodeToString(wearPrefsRepository.getAllTemplateTiles())
+        )
+        val json = kotlinJsonMapper.encodeToString(configData)
+        val data = json.toByteArray(Charsets.UTF_8)
         try {
-            Wearable.getDataClient(this@PhoneSettingsListener).putDataItem(putDataRequest).await()
-            Timber.d("Successfully sent /config to device")
+            // HMS: Send data using DataTransferEngine
+            DataTransferEngine.getInstance(applicationContext)
+                .sendData("/config", data, this@PhoneSettingsListener)
+            Timber.d("Successfully sent /config to device (HMS)")
         } catch (e: Exception) {
-            Timber.e(e, "Failed to send /config to device")
+            Timber.e(e, "Failed to send /config to device (HMS)")
         }
     }
 

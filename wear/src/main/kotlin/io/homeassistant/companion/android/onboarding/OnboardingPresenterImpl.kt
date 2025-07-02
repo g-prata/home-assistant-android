@@ -8,10 +8,8 @@ import androidx.wear.phone.interactions.authentication.CodeVerifier
 import androidx.wear.phone.interactions.authentication.OAuthRequest
 import androidx.wear.phone.interactions.authentication.OAuthResponse
 import androidx.wear.phone.interactions.authentication.RemoteAuthClient
-import com.google.android.gms.wearable.DataEvent
-import com.google.android.gms.wearable.DataEventBuffer
-import com.google.android.gms.wearable.DataMap
-import com.google.android.gms.wearable.DataMapItem
+import com.huawei.wearengine.datatransfer.Data
+import com.huawei.wearengine.datatransfer.DataCallback
 import dagger.hilt.android.qualifiers.ActivityContext
 import io.homeassistant.companion.android.common.R as commonR
 import io.homeassistant.companion.android.common.data.servers.ServerManager
@@ -35,7 +33,7 @@ import timber.log.Timber
 class OnboardingPresenterImpl @Inject constructor(
     @ActivityContext context: Context,
     private val serverManager: ServerManager,
-) : OnboardingPresenter {
+) : OnboardingPresenter, DataCallback {
 
     private val view = context as OnboardingView
     private val mainScope: CoroutineScope = CoroutineScope(Dispatchers.Main + Job())
@@ -97,37 +95,20 @@ class OnboardingPresenterImpl @Inject constructor(
         }
     }
 
-    override fun onDataChanged(dataEvents: DataEventBuffer) {
-        Timber.d("onDataChanged: [${dataEvents.count}]")
-        dataEvents.forEach { event ->
-            if (event.type == DataEvent.TYPE_CHANGED) {
-                event.dataItem.also { item ->
-                    if (item.uri.path?.compareTo("/home_assistant_instance") == 0) {
-                        Timber.d("onDataChanged: found home_assistant_instance")
-                        val instance = getInstance(DataMapItem.fromDataItem(item).dataMap)
-                        view.onInstanceFound(instance)
-                    }
-                }
-            } else if (event.type == DataEvent.TYPE_DELETED) {
-                event.dataItem.also { item ->
-                    if (item.uri.path?.compareTo("/home_assistant_instance") == 0) {
-                        val instance = getInstance(DataMapItem.fromDataItem(item).dataMap)
-                        view.onInstanceLost(instance)
-                    }
-                }
-            }
+    // HMS: DataCallback implementation
+    override fun onDataReceived(path: String, data: ByteArray) {
+        Timber.d("onDataReceived: path=$path")
+        if (path == "/home_assistant_instance") {
+            // Deserialize your data (e.g., JSON) to HomeAssistantInstance
+            val json = String(data, Charsets.UTF_8)
+            val instance = parseInstanceFromJson(json)
+            view.onInstanceFound(instance)
         }
-        dataEvents.release()
     }
 
-    override fun getInstance(map: DataMap): HomeAssistantInstance {
-        map.apply {
-            return HomeAssistantInstance(
-                getString("name", ""),
-                URL(getString("url", "")),
-                getString("version", ""),
-            )
-        }
+    // HMS: Replace DataMap with JSON or your preferred serialization
+    fun parseInstanceFromJson(json: String): HomeAssistantInstance {
+        return kotlinJsonMapper.decodeFromString<HomeAssistantInstance>(json)
     }
 
     fun register(url: String, code: String) {

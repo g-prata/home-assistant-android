@@ -69,6 +69,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
     implementation(libs.huawei.hms.push)
+    implementation(libs.huawei.hms.wear.engine)
     screenshotTestImplementation(libs.compose.uiTooling)
 
     androidTestImplementation(platform(libs.compose.bom))
