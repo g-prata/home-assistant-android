@@ -42,12 +42,14 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="42dp"
                 android:ems="10"
-                android:hint="Access token"
-                android:importantForAutofill="no"
+                android:minHeight="48dp"
+                android:hint="@string/input_token_hint"
                 android:inputType="textNoSuggestions"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/textView" />
+                app:layout_constraintTop_toBottomOf="@+id/textView"
+                android:importantForAutofill="no"
+                tools:ignore="TextFields" />
 
             <TextView
                 android:id="@+id/textView"
