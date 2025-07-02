@@ -20,7 +20,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class DiscoveryFragment @Inject constructor() : Fragment() {
+class DiscoveryFragment : Fragment() {
 
     private val viewModel by activityViewModels<OnboardingViewModel>()
 
