@@ -35,7 +35,9 @@ class ManualSetupActivity : AppCompatActivity(), ManualSetupView {
         setContentView(binding.root)
 
         binding.buttonNext.setOnClickListener {
-            presenter.onNextClicked(this, findViewById<EditText>(R.id.device_name).text.toString())
+            val deviceName = findViewById<EditText>(R.id.device_name).text.toString();
+            val accessToken = findViewById<EditText>(R.id.access_token).text.toString();
+            presenter.onNextClicked(this, deviceName, accessToken);
         }
 
         adjustInset(applicationContext, null, binding)

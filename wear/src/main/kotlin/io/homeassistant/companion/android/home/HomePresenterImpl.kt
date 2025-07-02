@@ -17,7 +17,6 @@ import io.homeassistant.companion.android.common.data.websocket.impl.entities.De
 import io.homeassistant.companion.android.common.data.websocket.impl.entities.EntityRegistryResponse
 import io.homeassistant.companion.android.common.data.websocket.impl.entities.EntityRegistryUpdatedEvent
 import io.homeassistant.companion.android.data.SimplifiedEntity
-import io.homeassistant.companion.android.onboarding.getMessagingToken
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -186,7 +185,7 @@ class HomePresenterImpl @Inject constructor(
                         DeviceRegistration(
                             "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
                             null,
-                            getMessagingToken(),
+                            null,
                             false,
                         ),
                     )

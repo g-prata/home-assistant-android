@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.homeassistant.android.application)
-    alias(libs.plugins.google.services)
     alias(libs.plugins.screenshot)
 }
 
@@ -36,7 +35,6 @@ dependencies {
     implementation(libs.wear)
     implementation(libs.core.ktx)
     implementation(libs.core.splashscreen)
-    implementation(libs.play.services.wearable)
     implementation(libs.wear.input)
     implementation(libs.wear.remote.interactions)
     implementation(libs.wear.phone.interactions)
@@ -70,6 +68,7 @@ dependencies {
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
+    implementation(libs.huawei.hms.push)
     screenshotTestImplementation(libs.compose.uiTooling)
 
     androidTestImplementation(platform(libs.compose.bom))

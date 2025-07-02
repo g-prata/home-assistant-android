@@ -15,6 +15,8 @@ pluginManagement {
         }
         mavenCentral()
         gradlePluginPortal()
+        // Configure the Maven repository address for the HMS Core SDK.
+        maven("https://developer.huawei.com/repo/")
     }
 }
 
@@ -53,5 +55,6 @@ dependencyResolutionManagement {
         mavenCentral()
         google()
         maven("https://jitpack.io")
+        maven("https://developer.huawei.com/repo/")
     }
 }

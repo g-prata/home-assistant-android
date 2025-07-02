@@ -1,7 +1,7 @@
 package io.homeassistant.companion.android.notifications
 
-import com.google.firebase.messaging.FirebaseMessagingService
-import com.google.firebase.messaging.RemoteMessage
+import com.huawei.hms.push.HmsMessageService
+import com.huawei.hms.push.RemoteMessage
 import dagger.hilt.android.AndroidEntryPoint
 import io.homeassistant.companion.android.common.data.integration.DeviceRegistration
 import io.homeassistant.companion.android.common.data.servers.ServerManager
@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @AndroidEntryPoint
-class FirebaseCloudMessagingService : FirebaseMessagingService() {
+class FirebaseCloudMessagingService : HmsMessageService() {
     companion object {
         private const val SOURCE = "FCM"
     }
@@ -27,9 +27,9 @@ class FirebaseCloudMessagingService : FirebaseMessagingService() {
     private val mainScope: CoroutineScope = CoroutineScope(Dispatchers.Main + Job())
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        Timber.d("From: ${remoteMessage.from} and data: ${remoteMessage.data}")
+        Timber.d("From: ${remoteMessage.from} and data: ${remoteMessage.dataOfMap}")
 
-        messagingManager.handleMessage(remoteMessage.data, SOURCE)
+        messagingManager.handleMessage(remoteMessage.dataOfMap, SOURCE)
     }
 
     /**
